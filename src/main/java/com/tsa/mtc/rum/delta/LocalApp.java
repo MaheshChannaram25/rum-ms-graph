@@ -23,14 +23,14 @@ import java.util.List;
 
 public class LocalApp {
 
-    private final static String CSV_LOCATION = "Appointments.csv ";
+    private final static String CSV_LOCATION = "Appointments_2019.csv ";
     private final static int PAGE_SIZE = 200;
     private static final String[] CSV_COLUMNS = new String[]
             {
                     "appointmentId", "hotelId", "hotelName", "opportunityId", "userId", "activityType", "startDateTime",
                     "endDateTime", "appointmentStatus", "durationMins", "durationDays", "durationHours",
                     "isBillable", "location", "activityDetails", "notes", "isTrainerLocal", "originalStartDate",
-                    "originalEndDate", "createdBy", "createdDate", "modifiedBy", "modifiedDate", "subject"
+                    "originalEndDate", "createdBy", "createdDate", "modifiedBy", "modifiedDate", "subject", "eventType"
             };
 
     // Get bean for writing the logic into csv
@@ -84,8 +84,8 @@ public class LocalApp {
                 requestOptions.add(new QueryOption("$deltatoken", deltaToken));
             } else {
                 System.out.println("Processing Full Data");
-                requestOptions.add(new QueryOption("startDateTime", "2008-01-01T00:00:00-00:00"));
-                requestOptions.add(new QueryOption("endDateTime", "2019-12-31T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("startDateTime", "2019-01-01T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("endDateTime", "2020-01-01T00:00:00-00:00"));
             }
 
             IEventDeltaCollectionPage calendarViewDelta = graphClient.me().calendarView()
