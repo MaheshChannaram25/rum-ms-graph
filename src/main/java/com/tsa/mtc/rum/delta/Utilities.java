@@ -14,8 +14,6 @@ import java.util.*;
 public class Utilities {
 
     public static final String DOE_DATE_FORMAT = "dd-MM-yyyy HH:mm:ss";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.0000000");
-    private static final String STANDARD_DB_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final String EMPTY_VAL = "";
     private static final String VAL_SPACE = "&nbsp;";
     private static final String STARTS_WITH_DEL = "(?i:.*Del.*)";
@@ -54,6 +52,10 @@ public class Utilities {
         for (Event event : eventList) {
 
             JsonObject rawObject = event.getRawObject();
+            if (null == rawObject || null == rawObject.get("type")) {
+                continue;
+            }
+
             String eventType = rawObject.get("type").getAsString();
 
             // Populate variables directly from rawObject
@@ -100,41 +102,68 @@ public class Utilities {
 
                 if (isRequiredContentValid(sContent, contentArray)) {
                     sContent = sContent.trim();
-
+                    int arraySize = contentArray.length - 1;
                     // Populate data from meta tags
                     if (!sContent.isEmpty()) {
                         Appointment appointment = new Appointment();
                         appointment.setAppointmentId(rawObject.get("id").getAsString());
 
                         // Location 0 in meta data
-                        appointment.setAppointmentStatus(contentArray[META_DATA_APPOINTMENT_STATUS].trim());
+                        appointment.setAppointmentStatus(arraySize >= META_DATA_APPOINTMENT_STATUS ? contentArray[META_DATA_APPOINTMENT_STATUS].trim() : null);
 
                         // Location 1 in meta data
-                        appointment.setActivityType(contentArray[META_DATA_ACTIVITY_TYPE].trim());
-                        String activityDetails = contentArray[META_DATA_ACTIVITY_DETAILS].trim();
+                        appointment.setActivityType(arraySize >= META_DATA_ACTIVITY_TYPE ? contentArray[META_DATA_ACTIVITY_TYPE].trim() : null);
 
-                        String[] activity_details_arr = activityDetails.split(":");
-                        appointment.setActivityDetails(activityDetails);
-                        if (activity_details_arr.length == 3) {
-                            assert activity_details_arr[2] != null;
-                            appointment.setBillable(activity_details_arr[2].equals("Billable"));
+                        appointment.setActivityDetails(arraySize >= META_DATA_ACTIVITY_DETAILS ? contentArray[META_DATA_ACTIVITY_DETAILS].trim() : null);
+                        if (appointment.getActivityDetails() != null) {
+                            String activityDetails = contentArray[META_DATA_ACTIVITY_DETAILS].trim();
+                            String[] activity_details_arr = activityDetails.split(":");
+                            if (activity_details_arr.length == 3) {
+                                assert activity_details_arr[2] != null;
+                                appointment.setBillable(activity_details_arr[2].equals("Billable"));
+                            }
+                        } else {
+                            appointment.setBillable(false);
+                        }
+                        if (null == appointment.getBillable()) {
+                            appointment.setBillable(false);
                         }
 
-                        String hotelDetails = contentArray[META_DATA_HOTEL_DETAILS].trim();
-                        appointment.setHotelId(getHotelID(hotelDetails));
-                        appointment.setHotelName(getHotelName(hotelDetails));
-                        appointment.setUserId(contentArray[META_DATA_USERNAME].trim().equals(EMPTY_VAL) ? EMPTY_VAL : contentArray[META_DATA_USERNAME].trim());
-                        appointment.setLocation(contentArray[META_DATA_LOCATION].trim().replaceAll(VAL_SPACE, EMPTY_VAL));
-                        appointment.setNotes(contentArray[META_DATA_NOTES].replaceAll("<.*?>", "").trim());
-                        appointment.setModifiedBy(contentArray[META_DATA_MODIFIED_BY].trim().isEmpty() ? EMPTY_VAL : contentArray[META_DATA_MODIFIED_BY].trim());
-
+                        if (arraySize >= META_DATA_HOTEL_DETAILS) {
+                            String hotelDetails = contentArray[META_DATA_HOTEL_DETAILS].trim();
+                            appointment.setHotelId(getHotelID(hotelDetails));
+                            appointment.setHotelName(getHotelName(hotelDetails));
+                        } else {
+                            appointment.setHotelId(null);
+                            appointment.setHotelName(null);
+                        }
+                        if (arraySize >= META_DATA_USERNAME) {
+                            appointment.setUserId(contentArray[META_DATA_USERNAME].trim().equals(EMPTY_VAL) ? EMPTY_VAL : contentArray[META_DATA_USERNAME].trim());
+                        } else {
+                            appointment.setUserId(null);
+                        }
+                        if (arraySize >= META_DATA_LOCATION) {
+                            appointment.setLocation(contentArray[META_DATA_LOCATION].trim().replaceAll(VAL_SPACE, EMPTY_VAL));
+                        } else {
+                            appointment.setLocation(null);
+                        }
+                        if (arraySize >= META_DATA_NOTES) {
+                            appointment.setNotes(contentArray[META_DATA_NOTES].replaceAll("<.*?>", "").trim());
+                        } else {
+                            appointment.setNotes(null);
+                        }
+                        if (arraySize >= META_DATA_MODIFIED_BY) {
+                            appointment.setModifiedBy(contentArray[META_DATA_MODIFIED_BY].trim().isEmpty() ? EMPTY_VAL : contentArray[META_DATA_MODIFIED_BY].trim());
+                        } else {
+                            appointment.setModifiedBy("");
+                        }
                         //Start DateTime and End DateTime
                         String start = rawObject.get("start").getAsJsonObject().get("dateTime").getAsString();
                         appointment.setStartDateTime(getStartOrEndDate(start));
                         String end = rawObject.get("end").getAsJsonObject().get("dateTime").getAsString();
                         appointment.setEndDateTime(getStartOrEndDate(end));
 
-                        System.out.println("start date :" + appointment.getStartDateTime() + "\n End Date : " + appointment.getEndDateTime());
+                        //	System.out.println("start date :"+ appointment.getStartDateTime() +"\n End Date : "+ appointment.getEndDateTime());
 
                         //Duration
                         DateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
@@ -175,28 +204,32 @@ public class Utilities {
                          */
 
                         // Modified Date
-                        String MD = contentArray[META_DATA_MODIFIED_DATE].trim();
-                        if (MD != null && MD.length() > 2) {
-                            Date CD = calendar.getTime();
-                            DateFormat sgtFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            sgtFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-                            String sgtCD = sgtFormat.format(CD);
-                            Date sgtCreatedDate = parserDate(sgtCD, "yyyy-MM-dd HH:mm:ss");
+                        if (arraySize >= META_DATA_MODIFIED_DATE) {
+                            String MD = contentArray[META_DATA_MODIFIED_DATE].trim();
+                            if (MD.length() > 2) {
+                                Date CD = calendar.getTime();
+                                DateFormat sgtFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                sgtFormat.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+                                String sgtCD = sgtFormat.format(CD);
+                                Date sgtCreatedDate = parserDate(sgtCD, "yyyy-MM-dd HH:mm:ss");
 
-                            Date mDMetaData = null;
-                            if (MD.lastIndexOf(":") > 13) {
-                                mDMetaData = parserDate(MD, "dd-MM-yyyy HH:mm:ss");
-                            } else {
-                                mDMetaData = parserDate(MD, "dd-MM-yyyy HH:mm");
-                            }
+                                Date mDMetaData;
+                                if (MD.lastIndexOf(":") > 13) {
+                                    mDMetaData = parserDate(MD, "dd-MM-yyyy HH:mm:ss");
+                                } else {
+                                    mDMetaData = parserDate(MD, "dd-MM-yyyy HH:mm");
+                                }
 
-                            if (mDMetaData.before(sgtCreatedDate)) {
-                                appointment.setModifiedDate(createdDate);
-                            } else {
-                                appointment.setModifiedDate(getCsvDateString(mDMetaData));
+                                if (mDMetaData.before(sgtCreatedDate)) {
+                                    appointment.setModifiedDate(createdDate);
+                                } else {
+                                    appointment.setModifiedDate(getCsvDateString(mDMetaData));
+                                }
                             }
+                        } else {
+                            appointment.setModifiedDate(null);
                         }
-                        System.out.println("\ncreatedDate :" + appointment.getCreatedDate() + "|n Modifieddate :" + appointment.getModifiedDate() + "\nduration in mins :" + appointment.getDurationMins() + "\nHours ;" + appointment.getDurationHours() + "\nDays" + appointment.getDurationDays());
+                        //  System.out.println("\ncreatedDate :" + appointment.getCreatedDate() + "|n Modifieddate :"+ appointment.getModifiedDate() + "\nduration in mins :" + appointment.getDurationMins() + "\nHours ;" + appointment.getDurationHours() + "\nDays"+ appointment.getDurationDays());
 
 
                         /*
@@ -212,7 +245,7 @@ public class Utilities {
                         }
 
                         boolean isCancelled = rawObject.get("isCancelled").getAsBoolean();
-                        System.out.println("\neventType is Cancelled.." + isCancelled);
+                        //     System.out.println("\neventType is Cancelled.."+ isCancelled);
                         if (isCancelled) {
                             appointment.setSubject("CAN");
                         }
@@ -268,26 +301,24 @@ public class Utilities {
 
     private static Float getDurationInDays(float timeInMinutes) {
         float counter = 0;
-        while (true) {
-            if (timeInMinutes >= 0 && timeInMinutes < 480) {
-                return counter + (timeInMinutes / 60) / 8;
-            } else if (timeInMinutes >= 480 && timeInMinutes < 1440) {
-                return counter + 1;
-            } else if (timeInMinutes >= 1440 && timeInMinutes < 1920) {
-                return (float) (counter + 1.5);
-            } else if (timeInMinutes == 1920) {
-                return counter + 2;
-            } else if (timeInMinutes > 1920) {
-                timeInMinutes = timeInMinutes - 1440;
-                counter = counter + 1;
-            }
-            return (float) (Math.round(counter * 10) / 10.0);
+        if (timeInMinutes >= 0 && timeInMinutes < 480) {
+            return counter + (timeInMinutes / 60) / 8;
+        } else if (timeInMinutes >= 480 && timeInMinutes < 1440) {
+            return counter + 1;
+        } else if (timeInMinutes >= 1440 && timeInMinutes < 1920) {
+            return (float) (counter + 1.5);
+        } else if (timeInMinutes == 1920) {
+            return counter + 2;
+        } else if (timeInMinutes > 1920) {
+            timeInMinutes = timeInMinutes - 1440;
+            counter = counter + 1;
         }
+        return (float) (Math.round(counter * 10) / 10.0);
     }
 
 
     private static Float getDurationInHours(float timeInMinutes) {
-        float hours = 0;
+        float hours;
         if (timeInMinutes >= 0 && timeInMinutes < 480)
             hours = (timeInMinutes / 60);
         else {
@@ -296,7 +327,7 @@ public class Utilities {
         return hours;
     }
 
-
+    /*
     public static String getDoeDateString(Date date) {
         if (date == null) {
             return "";
@@ -304,6 +335,7 @@ public class Utilities {
         DateFormat format = new SimpleDateFormat(DOE_DATE_FORMAT);
         return format.format(date);
     }
+    */
 
     public static String getCsvDateString(Date date) {
         if (date == null) {
@@ -313,6 +345,7 @@ public class Utilities {
         return format.format(date);
     }
 
+    /*
     public static Date getLMTFromUTC(String dateStr) {
         try {
             if (dateStr == null) {
@@ -326,6 +359,7 @@ public class Utilities {
             return null;
         }
     }
+    */
 
     private static String getRequiredContent(String sContent) {
         // If APT-START-TAG is present, take content between APT TAG.
@@ -401,8 +435,8 @@ public class Utilities {
 
     public static String getStartOrEndDate(String date) {
         try {
-            Date date1 = null;
-            String sgtDate = null;
+            Date date1;
+            String sgtDate;
 
             DateFormat utcFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
             utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -419,5 +453,9 @@ public class Utilities {
             e.printStackTrace();
         }
         return null;
+
+
     }
+
+
 }

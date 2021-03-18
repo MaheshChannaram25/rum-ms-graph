@@ -23,14 +23,14 @@ import java.util.List;
 
 public class LocalApp {
 
-    private final static String CSV_LOCATION = "Appointments.csv ";
+    private final static String CSV_LOCATION = "Appointments_2019.csv ";
     private final static int PAGE_SIZE = 200;
     private static final String[] CSV_COLUMNS = new String[]
             {
                     "appointmentId", "hotelId", "hotelName", "opportunityId", "userId", "activityType", "startDateTime",
                     "endDateTime", "appointmentStatus", "durationMins", "durationDays", "durationHours",
                     "isBillable", "location", "activityDetails", "notes", "isTrainerLocal", "originalStartDate",
-                    "originalEndDate", "createdBy", "createdDate", "modifiedBy", "modifiedDate", "subject"
+                    "originalEndDate", "createdBy", "createdDate", "modifiedBy", "modifiedDate", "subject", "eventType"
             };
 
     // Get bean for writing the logic into csv
@@ -80,10 +80,12 @@ public class LocalApp {
 //            deltaToken = "g3XmoZPpES0cu0h_mPznsAU2FwMWGZPyXE9VmmnHvdJMFxjQBczn9QcI7jnUVF7jds-_FUgzTGsbpoF_75pdjcrhzKshR3YHzj_bWhmptRqzeUECbYi9q3NA40zltMp3DWVE9-CZ5PtrXCGn6cFueoaohQeFYKdsZOCNM4RS2nLyO6zFh1gkUrEF8YvFSBgUfyEVtGSQxUi4HiZn8UbqXYOnXQHlLTetVKIAlz-tfWI.P_N1ElNKNzGiZQk0ZmVnt_2HxRGFbZKT82F8ib3VxYQ";
 
             if (deltaToken != null) {
+                System.out.println("Processing Delta Changes");
                 requestOptions.add(new QueryOption("$deltatoken", deltaToken));
             } else {
-                requestOptions.add(new QueryOption("startDateTime", "2020-01-01T00:00:00-00:00"));
-                requestOptions.add(new QueryOption("endDateTime", "2021-01-01T00:00:00-00:00"));
+                System.out.println("Processing Full Data");
+                requestOptions.add(new QueryOption("startDateTime", "2019-01-01T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("endDateTime", "2020-01-01T00:00:00-00:00"));
             }
 
             IEventDeltaCollectionPage calendarViewDelta = graphClient.me().calendarView()
@@ -117,8 +119,8 @@ public class LocalApp {
                 nextLink = Utilities.getLink(rawObject, "@odata.nextLink");
                 deltaLink = Utilities.getLink(rawObject, "@odata.deltaLink");
 
-//                System.out.println("loop nextLink = " + nextLink);
-//                System.out.println("loop deltaLink = " + deltaLink);
+                System.out.println("loop nextLink = " + nextLink);
+                System.out.println("loop deltaLink = " + deltaLink);
 
                 currentPage = calendarViewDelta.getCurrentPage();
                 appointmentList = Utilities.populateAppointmentData(currentPage);
