@@ -23,7 +23,7 @@ import java.util.List;
 
 public class LocalApp {
 
-    private final static String CSV_LOCATION = "Appointments_2019.csv ";
+    private final static String CSV_LOCATION = "D:\\Appointments_local.csv";
     private final static int PAGE_SIZE = 200;
     private static final String[] CSV_COLUMNS = new String[]
             {
@@ -77,22 +77,22 @@ public class LocalApp {
                     .buildClient();
 
             String deltaToken = null;
-//            deltaToken = "g3XmoZPpES0cu0h_mPznsAU2FwMWGZPyXE9VmmnHvdJMFxjQBczn9QcI7jnUVF7jds-_FUgzTGsbpoF_75pdjcrhzKshR3YHzj_bWhmptRqzeUECbYi9q3NA40zltMp3DWVE9-CZ5PtrXCGn6cFueoaohQeFYKdsZOCNM4RS2nLyO6zFh1gkUrEF8YvFSBgUfyEVtGSQxUi4HiZn8UbqXYOnXQHlLTetVKIAlz-tfWI.P_N1ElNKNzGiZQk0ZmVnt_2HxRGFbZKT82F8ib3VxYQ";
+         //  deltaToken = "g3XmoZPpES0cu0h_mPznsPHwd7ZEmHtWB9f8SOhFT07EuXux2ScUm3BjAUG5xXA4Io2hGxPqzTJnVOQw-sFCA7ED0Yb_7Jt9CW8kJjfrpygzUfAoWc1it1M600-ZT4jkHnq48x6bW-qdqJiXOgo4fhDNzc1RnBdC4yZLEC3nGASgMBdoP2_hrbQRThjUwVu00OVvm3ELXdFyMpzuBydobPWFvnCUXB9bdwAsO7bISkM._D2V6l1BfJYK2uFh8BD3HtZaBEkfaHs3RAsTIxn5LX8";
 
             if (deltaToken != null) {
                 System.out.println("Processing Delta Changes");
                 requestOptions.add(new QueryOption("$deltatoken", deltaToken));
             } else {
                 System.out.println("Processing Full Data");
-                requestOptions.add(new QueryOption("startDateTime", "2019-01-01T00:00:00-00:00"));
-                requestOptions.add(new QueryOption("endDateTime", "2020-01-01T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("startDateTime", "2021-03-05T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("endDateTime", "2021-04-20T23:59:59-00:00"));
             }
 
             IEventDeltaCollectionPage calendarViewDelta = graphClient.me().calendarView()
                     .delta()
                     .buildRequest(requestOptions)
                     .get();
-
+  
             JsonObject rawObject = calendarViewDelta.getRawObject();
 
             String nextLink = Utilities.getLink(rawObject, "@odata.nextLink");
