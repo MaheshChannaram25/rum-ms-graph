@@ -110,17 +110,27 @@ public class Utilities {
 
                         // Location 0 in meta data
                         appointment.setAppointmentStatus(arraySize >= META_DATA_APPOINTMENT_STATUS ? contentArray[META_DATA_APPOINTMENT_STATUS].trim() : null);
-
+						
                         // Location 1 in meta data
                         appointment.setActivityType(arraySize >= META_DATA_ACTIVITY_TYPE ? contentArray[META_DATA_ACTIVITY_TYPE].trim() : null);
 
                         appointment.setActivityDetails(arraySize >= META_DATA_ACTIVITY_DETAILS ? contentArray[META_DATA_ACTIVITY_DETAILS].trim() : null);
+                       //Billable 
                         if (appointment.getActivityDetails() != null) {
                             String activityDetails = contentArray[META_DATA_ACTIVITY_DETAILS].trim();
                             String[] activity_details_arr = activityDetails.split(":");
-                            if (activity_details_arr.length == 3) {
+                            if (activity_details_arr.length == 3) {  
                                 assert activity_details_arr[2] != null;
-                                appointment.setBillable(activity_details_arr[2].equals("Billable"));
+                                if(activity_details_arr[2].equals("Billable")){
+                                //logic added according to old BI-ETL 
+                                if(appointment.getAppointmentStatus().equals("Confirmed") || appointment.getAppointmentStatus().equals("CXL by hotel") ) {
+                                	appointment.setBillable(true);
+                                 }
+                                else {
+                                	appointment.setBillable(false);
+                                }
+                                }else
+                                appointment.setBillable(false);
                             }
                         } else {
                             appointment.setBillable(false);
