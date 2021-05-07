@@ -110,27 +110,22 @@ public class Utilities {
 
                         // Location 0 in meta data
                         appointment.setAppointmentStatus(arraySize >= META_DATA_APPOINTMENT_STATUS ? contentArray[META_DATA_APPOINTMENT_STATUS].trim() : null);
-						
+
                         // Location 1 in meta data
                         appointment.setActivityType(arraySize >= META_DATA_ACTIVITY_TYPE ? contentArray[META_DATA_ACTIVITY_TYPE].trim() : null);
 
                         appointment.setActivityDetails(arraySize >= META_DATA_ACTIVITY_DETAILS ? contentArray[META_DATA_ACTIVITY_DETAILS].trim() : null);
-                       //Billable 
+                        //Billable
                         if (appointment.getActivityDetails() != null) {
                             String activityDetails = contentArray[META_DATA_ACTIVITY_DETAILS].trim();
                             String[] activity_details_arr = activityDetails.split(":");
-                            if (activity_details_arr.length == 3) {  
+                            if (activity_details_arr.length == 3) {
                                 assert activity_details_arr[2] != null;
-                                if(activity_details_arr[2].equals("Billable")){
-                                //logic added according to old BI-ETL 
-                                if(appointment.getAppointmentStatus().equals("Confirmed") || appointment.getAppointmentStatus().equals("CXL by hotel") ) {
-                                	appointment.setBillable(true);
-                                 }
-                                else {
-                                	appointment.setBillable(false);
-                                }
-                                }else
-                                appointment.setBillable(false);
+                                if (activity_details_arr[2].equals("Billable")) {
+                                    //logic added according to old BI-ETL
+                                    appointment.setBillable(appointment.getAppointmentStatus().equals("Confirmed") || appointment.getAppointmentStatus().equals("CXL by hotel"));
+                                } else
+                                    appointment.setBillable(false);
                             }
                         } else {
                             appointment.setBillable(false);
@@ -207,11 +202,6 @@ public class Utilities {
                         df.setTimeZone(TimeZone.getTimeZone("GMT+8"));
                         String createdDate = df.format(cd);
                         appointment.setCreatedDate(createdDate);
-                           /*   String createdDate = rawObject.get("createdDateTime").getAsString().substring(0,
-                                    rawObject.get("createdDateTime").getAsString().indexOf("."))
-                                    .replace(".", "Z").replace("T", " ");
-                            appointment.setCreatedDate(getLMTFromUTC(createdDate));
-                         */
 
                         // Modified Date
                         if (arraySize >= META_DATA_MODIFIED_DATE) {
@@ -240,15 +230,6 @@ public class Utilities {
                             appointment.setModifiedDate(null);
                         }
                         //  System.out.println("\ncreatedDate :" + appointment.getCreatedDate() + "|n Modifieddate :"+ appointment.getModifiedDate() + "\nduration in mins :" + appointment.getDurationMins() + "\nHours ;" + appointment.getDurationHours() + "\nDays"+ appointment.getDurationDays());
-
-
-                        /*
-                         * String modifiedDate =
-                         * rawObject.get("lastModifiedDateTime").getAsString().substring(0,
-                         * rawObject.get("lastModifiedDateTime").getAsString().indexOf("."))
-                         * .replace(".", "Z").replace("T", " "); //
-                         * appointment.setModifiedDate(getLMTFromUTC(modifiedDate));
-                         */
 
                         if (subject.matches(STARTS_WITH_DEL)) {
                             appointment.setSubject("DEL");
@@ -356,22 +337,6 @@ public class Utilities {
         return format.format(date);
     }
 
-    /*
-    public static Date getLMTFromUTC(String dateStr) {
-        try {
-            if (dateStr == null) {
-                return null;
-            }
-            final DateFormat formatUTC = new SimpleDateFormat(STANDARD_DB_DATETIME_FORMAT);
-            formatUTC.setTimeZone(TimeZone.getTimeZone("GMT+8"));
-            return formatUTC.parse(dateStr);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-    */
-
     private static String getRequiredContent(String sContent) {
         // If APT-START-TAG is present, take content between APT TAG.
         if (sContent.contains(START_APT_TAG)) {
@@ -464,9 +429,5 @@ public class Utilities {
             e.printStackTrace();
         }
         return null;
-
-
     }
-
-
 }

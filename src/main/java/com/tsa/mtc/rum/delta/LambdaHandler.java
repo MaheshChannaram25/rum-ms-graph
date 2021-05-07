@@ -28,15 +28,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
 public class LambdaHandler implements RequestHandler<Object, String> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LambdaHandler.class);
-
-    private final static String CSV_LOCATION = "/tmp/Appointments.csv";
+    private final static String FILE_LOCATION = "/tmp/";
+    private final static String CSV_EXTENSION = ".csv";
+    private final static String TXT_EXTENSION = ".txt";
+    private final static String BUCKET_PREFIX = "RUM-CSV-data/";
     private final static int PAGE_SIZE = 200;
     private static final String[] CSV_COLUMNS = new String[]
             {
@@ -99,9 +103,13 @@ public class LambdaHandler implements RequestHandler<Object, String> {
 
         FileWriter writer = null;
         String deltaToken = null;
+        String currentTime = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String csvFileName = "Appointments_" + currentTime + CSV_EXTENSION;
+        String csvFilePath = FILE_LOCATION + csvFileName;
+        String deltaFileName = "delta_" + currentTime + TXT_EXTENSION;
 
         try {
-            writer = new FileWriter(CSV_LOCATION);
+            writer = new FileWriter(csvFilePath);
             StatefulBeanToCsv<Appointment> csvWriter = getBeanWriter(writer);
 
             IGraphServiceClient graphClient = GraphServiceClient
@@ -112,7 +120,7 @@ public class LambdaHandler implements RequestHandler<Object, String> {
             // Check if delta token is already present, so that it can be used,
             // else full data will be fetched for given date range
             try {
-                S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, deltaToken_key));
+                S3Object s3Object = s3Client.getObject(new GetObjectRequest(bucket, BUCKET_PREFIX + deltaToken_key));
                 InputStream objectData = s3Object.getObjectContent();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(objectData));
                 if (reader.ready()) {
@@ -194,25 +202,26 @@ public class LambdaHandler implements RequestHandler<Object, String> {
         }
 
         try {
-            // Writing delta token for next call
-            s3Client.putObject(bucket, deltaToken_key, deltaToken);
-
             // Copying csv file from lambda tmp folder to S3 bucket
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, "RUM-CSV-data/Appointments.csv", new File(CSV_LOCATION));
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, BUCKET_PREFIX + csvFileName, new File(csvFilePath));
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType("plain/text");
             putObjectRequest.setMetadata(metadata);
             s3Client.putObject(putObjectRequest);
+
+            // Writing delta token for next call
+            s3Client.putObject(bucket, BUCKET_PREFIX + deltaToken_key, deltaToken);
+            s3Client.putObject(bucket, BUCKET_PREFIX + deltaFileName, deltaToken);
 
         } catch (AmazonServiceException e) {
             e.printStackTrace();
             LOGGER.error("AmazonServiceException occurred.");
         } catch (Exception e) {
             e.printStackTrace();
-            LOGGER.error("Exception while writing new delta token in bucket");
+            LOGGER.error("Exception while writing new delta token in bucket.");
         }
 
-        System.out.println("End time = " + System.currentTimeMillis());
+        LOGGER.info("End time = " + System.currentTimeMillis());
 
         return "CSV File generated Successfully.";
     }

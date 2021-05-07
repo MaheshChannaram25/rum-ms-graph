@@ -17,13 +17,17 @@ import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
 public class LocalApp {
 
-    private final static String CSV_LOCATION = "D:\\Appointments_local.csv";
+    private final static String FILE_LOCATION = "D://";
+    private final static String CSV_EXTENSION = ".csv";
+    private final static String TXT_EXTENSION = ".txt";
     private final static int PAGE_SIZE = 200;
     private static final String[] CSV_COLUMNS = new String[]
             {
@@ -64,9 +68,12 @@ public class LocalApp {
 //                        "test.dev@tsa-solutions.com",
 //                "Passw0rd");
         FileWriter writer = null;
+        String currentTime = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String csvFileName = FILE_LOCATION + "Appointments_" + currentTime + CSV_EXTENSION;
+        String deltaFileName = FILE_LOCATION + "delta_" + currentTime + TXT_EXTENSION;
 
         try {
-            writer = new FileWriter(CSV_LOCATION);
+            writer = new FileWriter(csvFileName);
             StatefulBeanToCsv<Appointment> csvWriter = getBeanWriter(writer);
             LinkedList<Option> requestOptions = new LinkedList<>();
             requestOptions.add(new HeaderOption("Prefer", "odata.maxpagesize=" + PAGE_SIZE));
@@ -77,22 +84,22 @@ public class LocalApp {
                     .buildClient();
 
             String deltaToken = null;
-         //  deltaToken = "g3XmoZPpES0cu0h_mPznsPHwd7ZEmHtWB9f8SOhFT07EuXux2ScUm3BjAUG5xXA4Io2hGxPqzTJnVOQw-sFCA7ED0Yb_7Jt9CW8kJjfrpygzUfAoWc1it1M600-ZT4jkHnq48x6bW-qdqJiXOgo4fhDNzc1RnBdC4yZLEC3nGASgMBdoP2_hrbQRThjUwVu00OVvm3ELXdFyMpzuBydobPWFvnCUXB9bdwAsO7bISkM._D2V6l1BfJYK2uFh8BD3HtZaBEkfaHs3RAsTIxn5LX8";
+            //  deltaToken = "g3XmoZPpES0cu0h_mPznsPHwd7ZEmHtWB9f8SOhFT07EuXux2ScUm3BjAUG5xXA4Io2hGxPqzTJnVOQw-sFCA7ED0Yb_7Jt9CW8kJjfrpygzUfAoWc1it1M600-ZT4jkHnq48x6bW-qdqJiXOgo4fhDNzc1RnBdC4yZLEC3nGASgMBdoP2_hrbQRThjUwVu00OVvm3ELXdFyMpzuBydobPWFvnCUXB9bdwAsO7bISkM._D2V6l1BfJYK2uFh8BD3HtZaBEkfaHs3RAsTIxn5LX8";
 
             if (deltaToken != null) {
                 System.out.println("Processing Delta Changes");
                 requestOptions.add(new QueryOption("$deltatoken", deltaToken));
             } else {
                 System.out.println("Processing Full Data");
-                requestOptions.add(new QueryOption("startDateTime", "2021-03-05T00:00:00-00:00"));
-                requestOptions.add(new QueryOption("endDateTime", "2021-04-20T23:59:59-00:00"));
+                requestOptions.add(new QueryOption("startDateTime", "2019-01-01T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("endDateTime", "2030-12-31T23:59:59-00:00"));
             }
 
             IEventDeltaCollectionPage calendarViewDelta = graphClient.me().calendarView()
                     .delta()
                     .buildRequest(requestOptions)
                     .get();
-  
+
             JsonObject rawObject = calendarViewDelta.getRawObject();
 
             String nextLink = Utilities.getLink(rawObject, "@odata.nextLink");
