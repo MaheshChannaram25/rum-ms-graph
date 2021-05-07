@@ -290,21 +290,22 @@ public class Utilities {
         return (float) ((endDateTime.getTime() - startDateTime.getTime()) / (60 * 1000));
     }
 
-    private static Float getDurationInDays(float timeInMinutes) {
-        float counter = 0;
-        if (timeInMinutes >= 0 && timeInMinutes < 480) {
-            return counter + (timeInMinutes / 60) / 8;
-        } else if (timeInMinutes >= 480 && timeInMinutes < 1440) {
-            return counter + 1;
-        } else if (timeInMinutes >= 1440 && timeInMinutes < 1920) {
-            return (float) (counter + 1.5);
-        } else if (timeInMinutes == 1920) {
-            return counter + 2;
-        } else if (timeInMinutes > 1920) {
-            timeInMinutes = timeInMinutes - 1440;
-            counter = counter + 1;
-        }
-        return (float) (Math.round(counter * 10) / 10.0);
+	private static Float getDurationInDays(float timeInMinutes) {
+		 float counter = 0;
+		  while(true) {
+	        if (timeInMinutes >= 0 && timeInMinutes < 480) {
+	            return counter + (timeInMinutes / 60) / 8;
+	        } else if (timeInMinutes >= 480 && timeInMinutes < 1440) {
+	            return counter + 1;
+	        } else if (timeInMinutes >= 1440 && timeInMinutes < 1920) {
+	            return (float) (counter + 1.5);
+	        } else if (timeInMinutes == 1920) {
+	            return counter + 2;
+	        } else if (timeInMinutes > 1920) {
+	            timeInMinutes = timeInMinutes - 1440;
+	            counter = counter + 1;
+	        }
+	      }
     }
 
 
