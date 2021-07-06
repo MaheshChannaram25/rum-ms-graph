@@ -202,6 +202,33 @@ public class LambdaHandler implements RequestHandler<Object, String> {
         }
 
         try {
+        	String deltaToken2 = null ;
+        	String deltaToken1 = null;
+        	
+        	// Writing delta token for next call
+            s3Client.putObject(bucket, BUCKET_PREFIX + deltaToken_key, deltaToken);
+            s3Client.putObject(bucket, BUCKET_PREFIX + deltaFileName, deltaToken);
+            //crosschecking if file is written in S3 properly...
+        	S3Object s1Object  = s3Client.getObject(new GetObjectRequest(bucket, BUCKET_PREFIX + deltaToken_key)); //deltafile.txt
+        	InputStream objectData = s1Object.getObjectContent();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(objectData));
+            if (reader.ready()) {
+                 deltaToken1 = reader.readLine();
+            }
+            S3Object s2Object = s3Client.getObject(new GetObjectRequest(bucket, BUCKET_PREFIX + deltaFileName));  // delta file with timeStamp
+            InputStream objectData1 = s2Object.getObjectContent();
+            BufferedReader reader1 = new BufferedReader(new InputStreamReader(objectData1));
+            if (reader.ready()) {
+                 deltaToken2 = reader1.readLine();
+            }
+        	 if(deltaToken1!=null && deltaToken2!= null && deltaToken1.equals(deltaToken2)) {
+        		 System.out.println("Tokens are equal are written correctly in s3....");
+        	 }else if(deltaToken1==null) {
+        		 System.out.println("Delta file with file name delta.txt is null....");
+        	 }else {
+        		 System.out.println("Delta file with file name delta_Timestamp.txt is null....");
+        	 }
+            
             // Copying csv file from lambda tmp folder to S3 bucket
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, BUCKET_PREFIX + csvFileName, new File(csvFilePath));
             ObjectMetadata metadata = new ObjectMetadata();
@@ -209,9 +236,7 @@ public class LambdaHandler implements RequestHandler<Object, String> {
             putObjectRequest.setMetadata(metadata);
             s3Client.putObject(putObjectRequest);
 
-            // Writing delta token for next call
-            s3Client.putObject(bucket, BUCKET_PREFIX + deltaToken_key, deltaToken);
-            s3Client.putObject(bucket, BUCKET_PREFIX + deltaFileName, deltaToken);
+            
 
         } catch (AmazonServiceException e) {
             e.printStackTrace();
@@ -224,5 +249,6 @@ public class LambdaHandler implements RequestHandler<Object, String> {
         LOGGER.info("End time = " + System.currentTimeMillis());
 
         return "CSV File generated Successfully.";
+        
     }
 }
