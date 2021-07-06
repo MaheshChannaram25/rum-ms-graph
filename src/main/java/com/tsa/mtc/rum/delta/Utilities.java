@@ -290,6 +290,7 @@ public class Utilities {
         return (float) ((endDateTime.getTime() - startDateTime.getTime()) / (60 * 1000));
     }
 
+
 	private static Float getDurationInDays(float timeInMinutes) {
 		 float counter = 0;
 		  while(true) {
