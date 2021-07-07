@@ -15,6 +15,9 @@ import com.opencsv.bean.StatefulBeanToCsvBuilder;
 import com.opencsv.exceptions.CsvDataTypeMismatchException;
 import com.opencsv.exceptions.CsvRequiredFieldEmptyException;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -53,11 +56,11 @@ public class LocalApp {
                 .build();
     }
 
-    // Start of function
+    // Start of function "21ed2b33-cbc9-44bc-b51b-6be886d17e81",
     public static void main(String[] args) {
         System.out.println("Start time = " + System.currentTimeMillis());
         UsernamePasswordProvider authProvider = new UsernamePasswordProvider(
-                "21ed2b33-cbc9-44bc-b51b-6be886d17e81",
+               "39c8c25a-dea3-4166-afc2-56351523951b",
                 Collections.singletonList("https://graph.microsoft.com/.default"),
                 "admin.sugarcrm@tsa-solutions.com",
                 "CI6Ikp@XVCJ9");
@@ -68,12 +71,14 @@ public class LocalApp {
 //                        "test.dev@tsa-solutions.com",
 //                "Passw0rd");
         FileWriter writer = null;
+        //FileWriter writer1 = null;
         String currentTime = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String csvFileName = FILE_LOCATION + "Appointments_" + currentTime + CSV_EXTENSION;
         String deltaFileName = FILE_LOCATION + "delta_" + currentTime + TXT_EXTENSION;
 
         try {
             writer = new FileWriter(csvFileName);
+            //writer1 = new FileWriter(deltaFileName);
             StatefulBeanToCsv<Appointment> csvWriter = getBeanWriter(writer);
             LinkedList<Option> requestOptions = new LinkedList<>();
             requestOptions.add(new HeaderOption("Prefer", "odata.maxpagesize=" + PAGE_SIZE));
@@ -91,8 +96,8 @@ public class LocalApp {
                 requestOptions.add(new QueryOption("$deltatoken", deltaToken));
             } else {
                 System.out.println("Processing Full Data");
-                requestOptions.add(new QueryOption("startDateTime", "2019-01-01T00:00:00-00:00"));
-                requestOptions.add(new QueryOption("endDateTime", "2030-12-31T23:59:59-00:00"));
+                requestOptions.add(new QueryOption("startDateTime", "2021-06-01T00:00:00-00:00"));
+                requestOptions.add(new QueryOption("endDateTime", "2021-06-30T23:59:59-00:00"));
             }
 
             IEventDeltaCollectionPage calendarViewDelta = graphClient.me().calendarView()
@@ -132,10 +137,20 @@ public class LocalApp {
                 currentPage = calendarViewDelta.getCurrentPage();
                 appointmentList = Utilities.populateAppointmentData(currentPage);
                 csvWriter.write(appointmentList);
+                
             }
 
             System.out.println("Delta Link for next round = " + deltaLink);
-            System.out.println("Delta Token for next round = " + Utilities.getToken(deltaLink, "$deltatoken="));
+            String d= Utilities.getToken(deltaLink, "$deltatoken=");
+            System.out.println("Delta Token for next round = " +d );
+            
+            FileWriter deltaWriter =
+                    new FileWriter(deltaFileName);
+            BufferedWriter bufferedWriter =
+                    new BufferedWriter(deltaWriter);
+
+                bufferedWriter.write(d);
+           
 
         } catch (CsvRequiredFieldEmptyException | CsvDataTypeMismatchException | IOException e) {
             e.printStackTrace();
@@ -147,6 +162,7 @@ public class LocalApp {
                     e.printStackTrace();
                 }
             }
+            
         }
         System.out.println("End time = " + System.currentTimeMillis());
     }
